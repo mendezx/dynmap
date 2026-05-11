@@ -39,7 +39,12 @@ dependencies {
     compileOnly('de.bananaco:bPermissions:2.9.1')  { transitive = false }
     compileOnly('com.platymuus.bukkit.permissions:PermissionsBukkit:1.6')  { transitive = false }
     compileOnly('org.anjocaido:EssentialsGroupManager:2.10.1')  { transitive = false }
-    implementation group: 'org.bstats', name: 'bstats-bukkit', version: '3.0.2'
+    implementation('org.bstats:bstats-bukkit:3.0.2') {
+        transitive = true
+    }
+    implementation('org.bstats:bstats-base:3.0.2') {
+        transitive = true
+    }
     compileOnly('com.googlecode.json-simple:json-simple:1.1.1') { transitive = false }
     compileOnly('com.google.code.gson:gson:2.8.9') { transitive = false }
     implementation(project(':bukkit-helper')) {
@@ -138,8 +143,11 @@ jar {
 }
 
 shadowJar {
+    dependsOn project(':DynmapCore').tasks.named('shadowJar')
+
     dependencies {
-        include(dependency('org.bstats::'))
+        include(dependency('org.bstats:bstats-bukkit:.*'))
+        include(dependency('org.bstats:bstats-base:.*'))
         include(dependency(':dynmap-api'))
         include(dependency(":DynmapCore"))
         include(dependency(':bukkit-helper'))
@@ -176,7 +184,26 @@ shadowJar {
 }
 shadowJar.doLast {
     task ->
-        ant.checksum file: task.archiveFile.get().asFile
+        def jarFile = task.archiveFile.get().asFile
+        ant.checksum file: jarFile
+
+        def requiredRelocatedEntries = [
+                'org/dynmap/jetty/util/log/Logger.class',
+                'org/dynmap/jetty/server/Server.class',
+                'org/dynmap/jetty/servlet/ServletHolder.class',
+                'org/dynmap/javax/servlet/Servlet.class',
+                'org/dynmap/bstats/charts/CustomChart.class',
+                'org/dynmap/bstats/bukkit/Metrics.class'
+        ]
+        def zipFile = new java.util.zip.ZipFile(jarFile)
+        try {
+            def missingEntries = requiredRelocatedEntries.findAll { zipFile.getEntry(it) == null }
+            if (!missingEntries.isEmpty()) {
+                throw new GradleException("Missing relocated dependency classes in ${jarFile}: ${missingEntries.join(', ')}")
+            }
+        } finally {
+            zipFile.close()
+        }
 }
 
 artifacts {
