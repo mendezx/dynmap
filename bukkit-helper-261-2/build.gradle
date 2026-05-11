@@ -1,0 +1,31 @@
+plugins {
+    id 'io.papermc.paperweight.userdev' version '2.0.0-beta.21'
+}
+
+description = 'bukkit-helper-26.1.2'
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+}
+
+paperweight {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
+}
+
+dependencies {
+    implementation project(':bukkit-helper')
+    implementation project(':dynmap-api')
+    implementation project(path: ':DynmapCore', configuration: 'shadow')
+
+    paperweight.paperDevBundle("26.1.2.build.+")
+}
+
+paperweight.reobfArtifactConfiguration =
+        io.papermc.paperweight.userdev.ReobfArtifactConfiguration.getMOJANG_PRODUCTION()

@@ -132,16 +132,16 @@ public abstract class BukkitVersionHelperGeneric extends BukkitVersionHelper {
         cw_gethandle = getMethod(craftworld, new String[] { "getHandle" }, new Class[0]);
         /* CraftChunkSnapshot */
         craftchunksnapshot = getOBCClass("org.bukkit.craftbukkit.CraftChunkSnapshot");
-        biomebasearray =  getNMSClass("[Lnet.minecraft.server.BiomeBase;");
+        biomebasearray =  getNMSClassNoFail("[Lnet.minecraft.server.BiomeBase;");
         ccss_biome = getPrivateFieldNoFail(craftchunksnapshot, new String[] { "biome" }, biomebasearray);
         if(ccss_biome == null) {
-            biomestorage = getNMSClass("net.minecraft.server.BiomeStorage");
-            biomestoragebase = getPrivateField(biomestorage, new String[] { "h", "g", "f" }, biomebasearray);
-            ccss_biome = getPrivateField(craftchunksnapshot, new String[] { "biome" }, biomestorage);
+            biomestorage = getNMSClassNoFail("net.minecraft.server.BiomeStorage");
+            biomestoragebase = getPrivateFieldNoFail(biomestorage, new String[] { "h", "g", "f" }, biomebasearray);
+            ccss_biome = getPrivateFieldNoFail(craftchunksnapshot, new String[] { "biome" }, biomestorage);
         }
         /* CraftChunk */
         craftchunk = getOBCClass("org.bukkit.craftbukkit.CraftChunk");
-        cc_gethandle = getMethod(craftchunk, new String[] { "getHandle" }, new Class[0]);
+        cc_gethandle = getMethodNoFail(craftchunk, new String[] { "getHandle" }, new Class[0]);
         
         /** Server */
         server_getonlineplayers = getMethod(Server.class, new String[] { "getOnlinePlayers" }, new Class[0]);
@@ -153,10 +153,10 @@ public abstract class BukkitVersionHelperGeneric extends BukkitVersionHelper {
         obcplayer_getprofile = getMethod(obc_craftplayer, new String[] { "getProfile" }, new Class[0]);
         // GameProfile
         cma_gameprofile = getOBCClass("com.mojang.authlib.GameProfile");
-        cmaprofile_getproperties = getMethod(cma_gameprofile, new String[] { "getProperties" }, new Class[0]);
+        cmaprofile_getproperties = getMethod(cma_gameprofile, new String[] { "getProperties", "properties" }, new Class[0]);
         // Property
         cma_property = getOBCClass("com.mojang.authlib.properties.Property");
-	    cmaproperty_getvalue = getMethod(cma_property, new String[] { "getValue" }, new Class[0]);
+	    cmaproperty_getvalue = getMethod(cma_property, new String[] { "getValue", "value" }, new Class[0]);
         		
         /* Get NMS classes and fields */
         if(!failed)
@@ -558,10 +558,25 @@ public abstract class BukkitVersionHelperGeneric extends BukkitVersionHelper {
         Object profile = callMethod(player, obcplayer_getprofile, nullargs, null);
     	if (profile != null) {
     		Object propmap = callMethod(profile, cmaprofile_getproperties, nullargs, null);
-    		if ((propmap != null) && (propmap instanceof ForwardingMultimap)) {
-                ForwardingMultimap<String, Object> fmm = (ForwardingMultimap<String, Object>) propmap;
-                Collection<Object> txt = fmm.get("textures");
-                Object textureProperty = Iterables.getFirst(fmm.get("textures"), null);
+    		if (propmap != null) {
+                Object textureProperty = null;
+                if (propmap instanceof ForwardingMultimap) {
+                    ForwardingMultimap<String, Object> fmm = (ForwardingMultimap<String, Object>) propmap;
+                    textureProperty = Iterables.getFirst(fmm.get("textures"), null);
+                }
+                else {
+                    Method getTextures = getMethodNoFail(propmap.getClass(), new String[] { "get" }, new Class[] { Object.class });
+                    if (getTextures == null) {
+                        getTextures = getMethodNoFail(propmap.getClass(), new String[] { "get" }, new Class[] { String.class });
+                    }
+                    Object textures = callMethod(propmap, getTextures, new Object[] { "textures" }, null);
+                    if (textures instanceof Collection) {
+                        textureProperty = Iterables.getFirst((Collection<?>) textures, null);
+                    }
+                    else if (textures instanceof Iterable) {
+                        textureProperty = Iterables.getFirst((Iterable<?>) textures, null);
+                    }
+                }
                 if (textureProperty != null) {
                     String val = (String) callMethod(textureProperty, cmaproperty_getvalue, nullargs, null);
                     if (val != null) {
