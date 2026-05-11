@@ -33,6 +33,9 @@
 
 *.log
 /.gradle
+/.gradle-user
+**/.gradle/
+**/build/
 /fabric-1.16.1_client.launch
 /fabric-1.16.1_server.launch
 /fabric-1.16.2_client.launch

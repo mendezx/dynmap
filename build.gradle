@@ -13,7 +13,7 @@ buildscript {
 
 plugins {
     //id  "com.github.johnrengelman.shadow" version "7.1.0"
-    id  "io.github.goooler.shadow" version "8.1.7"
+    id  "com.gradleup.shadow" version "9.4.1"
     id  'java'
     id  'maven-publish'
 }
@@ -53,12 +53,17 @@ ext {
 }
 
 subprojects {  
-  apply plugin: "io.github.goooler.shadow"
+  apply plugin: "com.gradleup.shadow"
   apply plugin: 'java'
   apply plugin: 'maven-publish'
 
-  sourceCompatibility = 1.8
-  targetCompatibility = 1.8
+  ext.archivesBaseName = "Dynmap"
+  ext.sourceCompatibility = JavaVersion.VERSION_1_8
+  ext.targetCompatibility = JavaVersion.VERSION_1_8
+  java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+  }
   tasks.withType(JavaCompile) {
   	options.encoding = 'UTF-8'
   }

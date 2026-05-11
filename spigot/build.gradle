@@ -1,4 +1,6 @@
 
+import org.gradle.api.attributes.java.TargetJvmVersion
+
 description = 'dynmap'
 
 eclipse {
@@ -17,6 +19,12 @@ repositories {
 }
 
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
+
+configurations.configureEach {
+    if (name == 'compileClasspath' || name == 'runtimeClasspath') {
+        attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 25)
+    }
+}
 
 dependencies {
     implementation('org.bukkit:bukkit:1.10.2-R0.1-SNAPSHOT') { transitive = false }
@@ -109,6 +117,9 @@ dependencies {
     implementation(project(':bukkit-helper-121-11')) {
         transitive = false
     }
+    implementation(project(':bukkit-helper-261-2')) {
+        transitive = false
+    }
 }
 
 processResources {
@@ -156,6 +167,7 @@ shadowJar {
         include(dependency(':bukkit-helper-121-6'))
         include(dependency(':bukkit-helper-121-10'))
         include(dependency(':bukkit-helper-121-11'))
+        include(dependency(':bukkit-helper-261-2'))
     }
     relocate('org.bstats', 'org.dynmap.bstats')
     destinationDirectory = file '../target'
@@ -164,7 +176,7 @@ shadowJar {
 }
 shadowJar.doLast {
     task ->
-        ant.checksum file: task.archivePath
+        ant.checksum file: task.archiveFile.get().asFile
 }
 
 artifacts {
